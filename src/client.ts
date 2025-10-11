@@ -1,5 +1,5 @@
 import type { BetterAuthClientPlugin } from "better-auth";
-import type { siwf } from "./index";
+import type { siwf } from "./index.js";
 
 export const siwfClient = () =>
 	({

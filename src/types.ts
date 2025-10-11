@@ -1,6 +1,6 @@
 import type { MiniAppNotificationDetails } from "@farcaster/miniapp-core";
 import type { InferOptionSchema } from "better-auth/types";
-import type { schema } from "./schema";
+import type { schema } from "./schema.js";
 
 /**
  *  SIWF PLUGIN TYPES

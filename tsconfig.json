@@ -3,6 +3,8 @@
     "outDir": "dist",
     "rootDir": "src",
     "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
     "target": "es6",
     "module": "NodeNext",
     "esModuleInterop": true,
@@ -17,13 +19,5 @@
     "skipLibCheck": true,
     "strictNullChecks": true
   },
-  "include": [
-    "./*.js",
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "test/*.ts",
-    "node_modules",
-    "**/*.test.ts"
-  ]
+  "include": ["src/**/*"]
 }
