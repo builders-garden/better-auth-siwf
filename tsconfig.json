@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
+    "target": "es6",
+    "module": "NodeNext",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strict": true,
+    "moduleResolution": "nodenext",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true
+  },
+  "include": [
+    "./*.js",
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "test/*.ts",
+    "node_modules",
+    "**/*.test.ts"
+  ]
+}
