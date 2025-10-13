@@ -34,7 +34,7 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 				});
 
 				return ctx.json({ nonce });
-			}
+			},
 		),
 		verifyToken: createAuthEndpoint(
 			"/siwf/verify",
@@ -59,7 +59,7 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 					// Find stored nonce with wallet address and chain ID context
 					const verification =
 						await ctx.context.internalAdapter.findVerificationValue(
-							`siwe:${userFromClient.fid}`
+							`siwe:${userFromClient.fid}`,
 						);
 
 					if (!verification) {
@@ -71,7 +71,7 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 					}
 					// Clean up used nonce
 					await ctx.context.internalAdapter.deleteVerificationValue(
-						verification.id
+						verification.id,
 					);
 
 					// Ensure nonce is valid and not expired
@@ -195,7 +195,7 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 					// Create session cookie and set it in the response
 					const session = await ctx.context.internalAdapter.createSession(
 						user.id,
-						ctx
+						ctx,
 					);
 					if (!session) {
 						throw new APIError("INTERNAL_SERVER_ERROR", {
@@ -232,7 +232,18 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 						error: error instanceof Error ? error.message : "Unknown error",
 					});
 				}
-			}
+			},
 		),
 	},
 });
+
+export type {
+	FarcasterUser,
+	ResolveFarcasterUserArgs,
+	ResolveFarcasterUserResult,
+	SIWFClientType,
+	SIWFGetNonceResponse,
+	SIWFPluginOptions,
+	SIWFVerifyArgs,
+	SIWFVerifyResponse,
+} from "./types.js";
