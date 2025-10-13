@@ -1,23 +1,23 @@
 {
-  "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-    "target": "es6",
-    "module": "NodeNext",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "strict": true,
-    "moduleResolution": "nodenext",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "strictNullChecks": true
-  },
-  "include": ["src/**/*"]
+	"compilerOptions": {
+		"outDir": "dist",
+		"rootDir": "src",
+		"sourceMap": true,
+		"declaration": true /* Generates corresponding .d.ts file. */,
+		"declarationMap": true,
+		"target": "es6",
+		"module": "NodeNext",
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"noImplicitAny": true,
+		"strict": true,
+		"moduleResolution": "nodenext",
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"skipLibCheck": true,
+		"strictNullChecks": true
+	},
+	"include": ["src/**/*"]
 }

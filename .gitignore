@@ -9,7 +9,6 @@ yarn-error.log*
 !.env.example
 
 # Build output
-dist/
 build/
 *.tsbuildinfo
 
