@@ -1,6 +1,6 @@
 {
 	"name": "better-auth-siwf",
-	"version": "1.0.3",
+	"version": "1.0.7",
 	"description": "better-auth plugin for Sign In With Farcaster",
 	"types": "./dist/index.d.ts",
 	"exports": {

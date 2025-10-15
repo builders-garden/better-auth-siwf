@@ -9,33 +9,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { notificationDetailsSchema } from "@farcaster/miniapp-core";
 import { createClient } from "@farcaster/quick-auth";
+import { logger } from "better-auth";
 import { APIError } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { mergeSchema } from "better-auth/db";
 import { createAuthEndpoint } from "better-auth/plugins";
 import { z } from "zod";
+import { siwfClient } from "./client.js";
 import { schema } from "./schema.js";
-export const siwf = (options) => ({
+const siwf = (options) => ({
     id: "siwf",
     schema: mergeSchema(schema, options === null || options === void 0 ? void 0 : options.schema),
     endpoints: {
-        getNonce: createAuthEndpoint("/siwf/nonce", {
-            method: "POST",
-            body: z.object({
-                fid: z.number(),
-            }),
-        }, (ctx) => __awaiter(void 0, void 0, void 0, function* () {
-            const { fid } = ctx.body;
-            const nonce = yield options.getNonce();
-            const nonceLifetimeMs = 15 * 60 * 1000; // 15 minutes
-            // Store nonce with fid context
-            yield ctx.context.internalAdapter.createVerificationValue({
-                identifier: `siwf:${fid}`,
-                value: nonce,
-                expiresAt: new Date(Date.now() + nonceLifetimeMs),
-            });
-            return ctx.json({ nonce });
-        })),
         verifyToken: createAuthEndpoint("/siwf/verify", {
             method: "POST",
             body: z.object({
@@ -49,29 +34,92 @@ export const siwf = (options) => ({
                 }),
             }),
             requireRequest: true,
+            metadata: {
+                openapi: {
+                    summary: "Verify SIWF token",
+                    description: "Verify SIWF token",
+                    tags: ["siwf"],
+                    parameters: [
+                        {
+                            name: "token",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "object",
+                                required: ["token", "user"],
+                                properties: {
+                                    token: {
+                                        type: "string",
+                                        description: "SIWF token",
+                                    },
+                                    user: {
+                                        type: "object",
+                                        required: [
+                                            "fid",
+                                            "username",
+                                            "displayName",
+                                            "pfpUrl",
+                                            "notificationDetails",
+                                        ],
+                                        properties: {
+                                            fid: {
+                                                type: "number",
+                                                description: "Farcaster user ID",
+                                            },
+                                            username: {
+                                                type: "string",
+                                                description: "Farcaster username",
+                                            },
+                                            displayName: {
+                                                type: "string",
+                                                description: "Farcaster display name",
+                                            },
+                                            pfpUrl: {
+                                                type: "string",
+                                                description: "Farcaster profile picture URL",
+                                            },
+                                            notificationDetails: {
+                                                type: "object",
+                                                description: "Farcaster notification details",
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    ],
+                    responses: {
+                        200: {
+                            description: "SIWF token verified",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        required: ["success", "token", "user"],
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Whether the SIWF token was verified",
+                                            },
+                                            token: {
+                                                type: "string",
+                                                description: "Session token for the authenticated session",
+                                            },
+                                            user: {
+                                                $ref: "#/components/schemas/User",
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         }, (ctx) => __awaiter(void 0, void 0, void 0, function* () {
             var _a, _b, _c, _d, _e, _f, _g, _h;
             const { token, user: userFromClient } = ctx.body;
             try {
-                // Find stored nonce with wallet address and chain ID context
-                const verification = yield ctx.context.internalAdapter.findVerificationValue(`siwe:${userFromClient.fid}`);
-                if (!verification) {
-                    throw new APIError("UNAUTHORIZED", {
-                        status: 401,
-                        message: "SIWF Unauthorized: Invalid nonce",
-                        code: "UNAUTHORIZED_INVALID_OR_EXPIRED_NONCE",
-                    });
-                }
-                // Clean up used nonce
-                yield ctx.context.internalAdapter.deleteVerificationValue(verification.id);
-                // Ensure nonce is valid and not expired
-                if (new Date() > verification.expiresAt) {
-                    throw new APIError("UNAUTHORIZED", {
-                        status: 401,
-                        message: "SIWF Unauthorized: Expired nonce",
-                        code: "UNAUTHORIZED_INVALID_OR_EXPIRED_NONCE",
-                    });
-                }
                 // Verify SIWF token
                 const quickAuthClient = createClient();
                 const siwfVerification = yield quickAuthClient.verifyJwt({
@@ -171,7 +219,9 @@ export const siwf = (options) => ({
                     }
                 }
                 // Create session cookie and set it in the response
-                const session = yield ctx.context.internalAdapter.createSession(user.id, ctx);
+                const session = yield ctx.context.internalAdapter.createSession(user.id, ctx, undefined, {
+                    fid,
+                });
                 if (!session) {
                     throw new APIError("INTERNAL_SERVER_ERROR", {
                         status: 500,
@@ -196,7 +246,7 @@ export const siwf = (options) => ({
                 });
             }
             catch (error) {
-                console.log("error happened", error);
+                logger.error("SIWF error happened", error);
                 if (error instanceof APIError) {
                     throw error;
                 }
@@ -209,4 +259,5 @@ export const siwf = (options) => ({
         })),
     },
 });
+export { siwf, siwfClient, schema };
 //# sourceMappingURL=index.js.map

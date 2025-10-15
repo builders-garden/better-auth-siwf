@@ -4,7 +4,7 @@ Authenticate users via Farcaster using Better Auth. This plugin mirrors the deve
 
 - Server plugin: `siwf`
 - Client plugin: `siwfClient`
-- REST endpoints: `POST /siwf/nonce`, `POST /siwf/verify`
+- REST endpoints: `POST /siwf/verify`
 
 References: see the official SIWE plugin docs for structure and expectations and an earlier community attempt for Farcaster-specific ideas: [SIWE Plugin Docs](https://www.better-auth.com/docs/plugins/siwe), it's also an expansion of this other plugin [Farcaster Auth Plugin](https://github.com/iamlotp/Farcaster-Auth-Plugin-Better-Auth-).
 
@@ -30,10 +30,7 @@ export const auth = betterAuth({
     siwf({
       // must match the domain used when verifying the Farcaster JWT
       domain: "app.example.com",
-      
-      // provide a cryptographically secure nonce
-      getNonce: async () => generateRandomString(32),
-      
+       
       // Optional: resolve the user data and wallets from neynar for example
       resolveFarcasterUser: async ({ fid }): Promise<ResolveFarcasterUserResult | null> => (
         // see neynar docs for more information: https://docs.neynar.com/reference/fetch-bulk-users
@@ -75,7 +72,6 @@ export const auth = betterAuth({
 ```
 
 ### What the plugin does
-- Exposes `POST /siwf/nonce` to mint a short-lived nonce bound to a Farcaster `fid`.
 - Exposes `POST /siwf/verify` to verify a Farcaster Quick Auth JWT and establish a Better Auth session cookie.
 - Creates a `user` if one does not exist, associates it with a `farcaster` record, and (optionally) stores wallet addresses.
 - Sets a secure session cookie with `SameSite: "none"` for Farcaster MiniApp compatibility.
@@ -99,14 +95,7 @@ export const authClient = client as typeof client & SIWFClientType;
 
 ## Usage
 
-### 1) Generate a nonce
-Before initiating Quick Auth in your Farcaster MiniApp or app, mint a nonce for the `fid`.
-
-```ts
-const { data: nonce } = await authClient.siwf.getNonce();
-```
-
-### 2) Obtain a Farcaster JWT token on the client
+### 1) Obtain a Farcaster JWT token on the client
 Use Farcaster Quick Auth (within a Farcaster MiniApp) to obtain a signed JWT for your domain. Ensure the `domain` used here matches the server plugin `domain`.
 
 ```ts
@@ -114,7 +103,7 @@ const result = await miniappSdk.quickAuth.getToken(); // result: { token: string
 ```
 
 
-### 3) Verify and sign in
+### 2) Verify and sign in
 Send the token and user details to the better authserver. On success, the Better Auth session cookie is set.
 
 ```ts
@@ -144,16 +133,13 @@ const farcasterSignIn = async () => {
 
   const ctx = await miniappSdk.context;
   
-  // 1. Generate a nonce from better-auth
-  const { data: nonce } = await authClient.siwf.getNonce();
-
-  // 2. Obtain a Farcaster JWT token on the client
+  // 1. Obtain a Farcaster JWT token on the client
   const result = await miniappSdk.quickAuth.getToken();
   if (!result || !result.token) {
     throw new Error("Failed to get token");
   }
 
-  // 3. Verify and sign in with the Better Auth server
+  // 2. Verify and sign in with the Better Auth server
   const { data } = await authClient.siwf.verifyToken({
     token: result.token,
     user: {
@@ -174,7 +160,6 @@ const farcasterSignIn = async () => {
 Server options accepted by `siwf`:
 
 - `domain` (string, required): Domain expected in the Farcaster JWT. Must match exactly.
-- `getNonce` (() => Promise<string>, required): Return a cryptographically secure random nonce. Nonces expire after 15 minutes.
 - `resolveFarcasterUser` (optional): Enrich user record with Farcaster profile and wallet addresses. If provided, the plugin will also persist wallet addresses in `walletAddress`.
 - `schema` (optional): Extend or override the default plugin schema via Better Auth `mergeSchema`.
 
@@ -221,14 +206,12 @@ Alternatively, add the fields manually based on the tables above.
 
 ## Security Notes
 
-- Nonces are short-lived (15 minutes) and bound to `fid`.
 - The server verifies Farcaster JWTs with the configured `domain`. Mismatched domains will fail.
 - Session cookies are set with `secure: true`, `httpOnly: true`, and `sameSite: "none"` for MiniApp compatibility. Serve over HTTPS.
 - The plugin @farcaster/quick-auth ensures the JWT `sub` (subject) matches the provided `fid` before issuing a session.
 
 ## Troubleshooting
 
-- 401 Unauthorized with message "Invalid or expired nonce": Ensure you mint a fresh nonce per sign-in attempt and call verify within 15 minutes.
 - 401 "Invalid Farcaster user": The JWT subject must equal the provided `fid`.
 - No session cookie set: In embedded contexts (MiniApps), ensure third-party cookies are allowed and your server uses HTTPS with `SameSite: none`.
 - Domain mismatch: The JWT must be issued for the same `domain` configured in the plugin.

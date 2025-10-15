@@ -24,18 +24,12 @@ export type ResolveFarcasterUserResult = {
 };
 export type SIWFPluginOptions = {
     domain: string;
-    getNonce: () => Promise<string>;
     resolveFarcasterUser?: (args: ResolveFarcasterUserArgs) => Promise<ResolveFarcasterUserResult | null>;
     schema?: InferOptionSchema<typeof schema>;
 };
 /**
  * SIWF Client Type
  */
-export type SIWFGetNonceResponse = {
-    data: {
-        nonce: string;
-    };
-};
 export type SIWFVerifyArgs = {
     token: string;
     user: {
@@ -60,7 +54,6 @@ export type SIWFVerifyResponse = {
 };
 export type SIWFClientType = {
     siwf: {
-        getNonce: () => Promise<SIWFGetNonceResponse>;
         verify: (args: SIWFVerifyArgs) => Promise<SIWFVerifyResponse>;
     };
 };
