@@ -30,7 +30,7 @@ const siwf = (options) => ({
                     username: z.string().optional(),
                     displayName: z.string().optional(),
                     pfpUrl: z.string().optional(),
-                    notificationDetails: notificationDetailsSchema,
+                    notificationDetails: notificationDetailsSchema.optional(),
                 }),
             }),
             requireRequest: true,
