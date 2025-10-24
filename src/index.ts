@@ -1,4 +1,4 @@
-import { notificationDetailsSchema } from "@farcaster/miniapp-core";
+import type { notificationDetailsSchema } from "@farcaster/miniapp-core";
 import { createClient } from "@farcaster/quick-auth";
 import { logger } from "better-auth";
 import { APIError } from "better-auth/api";
@@ -26,7 +26,9 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 						username: z.string().optional(),
 						displayName: z.string().optional(),
 						pfpUrl: z.string().optional(),
-						notificationDetails: notificationDetailsSchema.optional(),
+						notificationDetails: z
+							.custom<typeof notificationDetailsSchema>()
+							.optional(),
 					}),
 				}),
 				requireRequest: true,
@@ -50,9 +52,8 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 										},
 										user: {
 											type: "object",
-											required: [
-												"fid",
-												"username",
+											required: ["fid", "username"],
+											optional: [
 												"displayName",
 												"pfpUrl",
 												"notificationDetails",

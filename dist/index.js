@@ -7,7 +7,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { notificationDetailsSchema } from "@farcaster/miniapp-core";
 import { createClient } from "@farcaster/quick-auth";
 import { logger } from "better-auth";
 import { APIError } from "better-auth/api";
@@ -30,7 +29,9 @@ const siwf = (options) => ({
                     username: z.string().optional(),
                     displayName: z.string().optional(),
                     pfpUrl: z.string().optional(),
-                    notificationDetails: notificationDetailsSchema.optional(),
+                    notificationDetails: z
+                        .custom()
+                        .optional(),
                 }),
             }),
             requireRequest: true,
@@ -54,9 +55,8 @@ const siwf = (options) => ({
                                     },
                                     user: {
                                         type: "object",
-                                        required: [
-                                            "fid",
-                                            "username",
+                                        required: ["fid", "username"],
+                                        optional: [
                                             "displayName",
                                             "pfpUrl",
                                             "notificationDetails",
