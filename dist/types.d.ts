@@ -1,4 +1,3 @@
-import type { MiniAppNotificationDetails } from "@farcaster/miniapp-core";
 import type { InferOptionSchema } from "better-auth/types";
 import type { schema } from "./schema.js";
 /**
@@ -37,7 +36,11 @@ export type SIWFVerifyArgs = {
         username?: string;
         displayName?: string;
         pfpUrl?: string;
-        notificationDetails?: MiniAppNotificationDetails[];
+        notificationDetails?: {
+            appFid: number;
+            url: string;
+            token: string;
+        }[];
     };
 };
 export type SIWFVerifyResponse = {
@@ -66,7 +69,11 @@ export type FarcasterUser = {
     username?: string;
     displayName?: string;
     avatarUrl?: string;
-    notificationDetails?: MiniAppNotificationDetails[];
+    notificationDetails?: {
+        appFid: number;
+        url: string;
+        token: string;
+    }[];
     createdAt: Date;
     updatedAt: Date;
 };

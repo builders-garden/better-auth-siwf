@@ -30,7 +30,11 @@ const siwf = (options) => ({
                     displayName: z.string().optional(),
                     pfpUrl: z.string().optional(),
                     notificationDetails: z
-                        .array(z.custom())
+                        .array(z.object({
+                        appFid: z.number(),
+                        url: z.string(),
+                        token: z.string(),
+                    }))
                         .optional(),
                 }),
             }),

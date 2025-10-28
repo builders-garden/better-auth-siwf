@@ -1,6 +1,6 @@
 {
 	"name": "better-auth-siwf",
-	"version": "1.0.11",
+	"version": "1.0.12",
 	"description": "better-auth plugin for Sign In With Farcaster",
 	"types": "./dist/index.d.ts",
 	"exports": {
@@ -27,7 +27,6 @@
 		"url": "https://github.com/builders-garden/better-auth-siwf.git"
 	},
 	"dependencies": {
-		"@farcaster/miniapp-core": "^0.4.1",
 		"@farcaster/quick-auth": "^0.0.8",
 		"better-auth": "^1.3.29",
 		"zod": "^4.1.12"

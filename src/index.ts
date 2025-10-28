@@ -1,4 +1,3 @@
-import type { MiniAppNotificationDetails } from "@farcaster/miniapp-core";
 import { createClient } from "@farcaster/quick-auth";
 import { logger } from "better-auth";
 import { APIError } from "better-auth/api";
@@ -27,7 +26,13 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 						displayName: z.string().optional(),
 						pfpUrl: z.string().optional(),
 						notificationDetails: z
-							.array(z.custom<MiniAppNotificationDetails>())
+							.array(
+								z.object({
+									appFid: z.number(),
+									url: z.string(),
+									token: z.string(),
+								}),
+							)
 							.optional(),
 					}),
 				}),

@@ -32,7 +32,11 @@ export const schema = {
                 type: "json",
                 required: false,
                 validator: {
-                    input: z.array(z.custom()),
+                    input: z.array(z.object({
+                        appFid: z.number(),
+                        url: z.string(),
+                        token: z.string(),
+                    })),
                 },
                 defaultValue: [],
             },

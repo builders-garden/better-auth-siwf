@@ -1,4 +1,3 @@
-import type { MiniAppNotificationDetails } from "@farcaster/miniapp-core";
 import type { BetterAuthDBSchema } from "better-auth/db";
 import { z } from "zod";
 
@@ -35,7 +34,13 @@ export const schema = {
 				type: "json",
 				required: false,
 				validator: {
-					input: z.array(z.custom<MiniAppNotificationDetails>()),
+					input: z.array(
+						z.object({
+							appFid: z.number(),
+							url: z.string(),
+							token: z.string(),
+						}),
+					),
 				},
 				defaultValue: [],
 			},

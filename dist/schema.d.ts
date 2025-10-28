@@ -32,13 +32,11 @@ export declare const schema: {
                 type: "json";
                 required: false;
                 validator: {
-                    input: z.ZodArray<z.ZodCustom<{
-                        url: string;
-                        token: string;
-                    }, {
-                        url: string;
-                        token: string;
-                    }>>;
+                    input: z.ZodArray<z.ZodObject<{
+                        appFid: z.ZodNumber;
+                        url: z.ZodString;
+                        token: z.ZodString;
+                    }, z.core.$strip>>;
                 };
                 defaultValue: never[];
             };
