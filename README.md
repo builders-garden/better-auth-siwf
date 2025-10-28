@@ -178,7 +178,7 @@ This plugin merges the following tables into your Better Auth schema.
 | username             | string  | Optional                            |
 | displayName          | string  | Optional                            |
 | avatarUrl            | string  | Optional                            |
-| notificationDetails  | json    | Optional (MiniApp notification)     |
+| notificationDetails  | json    | Optional (MiniApp notification array)     |
 | createdAt            | date    | Required                            |
 | updatedAt            | date    | Required                            |
 

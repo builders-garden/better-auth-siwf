@@ -1,3 +1,4 @@
+import { z } from "zod";
 export declare const schema: {
     farcaster: {
         modelName: string;
@@ -30,6 +31,16 @@ export declare const schema: {
             notificationDetails: {
                 type: "json";
                 required: false;
+                validator: {
+                    input: z.ZodArray<z.ZodCustom<{
+                        url: string;
+                        token: string;
+                    }, {
+                        url: string;
+                        token: string;
+                    }>>;
+                };
+                defaultValue: never[];
             };
             createdAt: {
                 type: "date";

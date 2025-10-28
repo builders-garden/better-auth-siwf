@@ -30,7 +30,7 @@ const siwf = (options) => ({
                     displayName: z.string().optional(),
                     pfpUrl: z.string().optional(),
                     notificationDetails: z
-                        .custom()
+                        .array(z.custom())
                         .optional(),
                 }),
             }),
@@ -79,7 +79,7 @@ const siwf = (options) => ({
                                                 description: "Farcaster profile picture URL",
                                             },
                                             notificationDetails: {
-                                                type: "object",
+                                                type: "array",
                                                 description: "Farcaster notification details",
                                             },
                                         },
@@ -177,7 +177,9 @@ const siwf = (options) => ({
                                     username: (_c = userFromClient.username) !== null && _c !== void 0 ? _c : fid.toString(),
                                     displayName: userFromClient.displayName,
                                     avatarUrl: userFromClient.pfpUrl,
-                                    notificationDetails: userFromClient.notificationDetails,
+                                    notificationDetails: userFromClient.notificationDetails
+                                        ? userFromClient.notificationDetails
+                                        : [],
                                     createdAt: new Date(),
                                     updatedAt: new Date(),
                                 },

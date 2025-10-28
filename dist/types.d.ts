@@ -37,7 +37,7 @@ export type SIWFVerifyArgs = {
         username?: string;
         displayName?: string;
         pfpUrl?: string;
-        notificationDetails?: MiniAppNotificationDetails;
+        notificationDetails?: MiniAppNotificationDetails[];
     };
 };
 export type SIWFVerifyResponse = {
@@ -66,7 +66,7 @@ export type FarcasterUser = {
     username?: string;
     displayName?: string;
     avatarUrl?: string;
-    notificationDetails?: MiniAppNotificationDetails;
+    notificationDetails?: MiniAppNotificationDetails[];
     createdAt: Date;
     updatedAt: Date;
 };
