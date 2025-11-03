@@ -33,7 +33,7 @@ export const auth = betterAuth({
       // required to enable the admin endpoint POST /siwf/create
       getAdminKey: () => process.env.BETTER_AUTH_ADMIN_KEY || "",
        
-      // Optional: resolve the user data and wallets from neynar for example
+      // Optional: resolve the user data from neynar for example
       // see neynar docs: https://docs.neynar.com/reference/fetch-bulk-users
       resolveFarcasterUser: async ({ fid }): Promise<ResolveFarcasterUserResult | null> => {
         const data = await fetch(
@@ -75,7 +75,7 @@ export const auth = betterAuth({
 
 ### What the plugin does
 - Exposes `POST /siwf/verify` to verify a Farcaster Quick Auth JWT and establish a Better Auth session cookie.
-- Creates a `user` if one does not exist, associates it with a `farcaster` record, and (optionally) stores wallet addresses.
+- Creates a `user` if one does not exist, associates it with a `farcaster` record.
 - Sets a secure session cookie with `SameSite: "none"` for Farcaster MiniApp compatibility.
 
 ## Client Setup
@@ -194,7 +194,7 @@ Server options accepted by `siwf`:
 
 - `domain` (string, required): Domain expected in the Farcaster JWT. Must match exactly.
 - `getAdminKey` (function, required for admin endpoint): Returns the string key used to authorize `POST /siwf/create`.
-- `resolveFarcasterUser` (optional): Enrich user record with Farcaster profile and wallet addresses. If provided, the plugin will also persist wallet addresses in `walletAddress`.
+- `resolveFarcasterUser` (function, required for admin endpoint): Enrich user record with Farcaster profile.
 - `schema` (optional): Extend or override the default plugin schema via Better Auth `mergeSchema`.
 
 Client plugin `siwfClient` has no options; it exposes the plugin namespace in the Better Auth client.
@@ -216,15 +216,6 @@ This plugin merges the following tables into your Better Auth schema.
 | createdAt            | date    | Required                            |
 | updatedAt            | date    | Required                            |
 
-### `walletAddress` (from SIWE schema pattern)
-
-| Field     | Type    | Notes                                           |
-|-----------|---------|-------------------------------------------------|
-| userId    | string  | References `user.id` (required)                 |
-| address   | string  | Wallet address (required)                       |
-| chainId   | number  | Optional (e.g., 1 for Ethereum, 10 for Optimism) |
-| isPrimary | boolean | Defaults to `false`                             |
-| createdAt | date    | Required                                        |
 
 ### Migrations
 

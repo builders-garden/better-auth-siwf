@@ -145,7 +145,7 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 						});
 					}
 
-					// Look for existing user by their wallet addresses
+					// Look for existing user by their fid
 					let user: User | null = null;
 
 					// Check if there's a farcaster record for this exact fid combination
@@ -204,24 +204,6 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 									updatedAt: new Date(),
 								}),
 							]);
-
-							const resolvedFarcasterUser = await options.resolveFarcasterUser({
-								fid,
-							});
-							if (resolvedFarcasterUser) {
-								// Also save custody wallet in db
-								await ctx.context.adapter.create({
-									model: "walletAddress",
-									data: [
-										{
-											userId: user.id,
-											address: resolvedFarcasterUser.custodyAddress,
-											chainId: 10, // optimism
-											isPrimary: true,
-										},
-									],
-								});
-							}
 						}
 					}
 
@@ -347,7 +329,7 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 				try {
 					const { fid } = ctx.body;
 
-					// Look for existing user by their wallet addresses
+					// Look for existing user by their fid
 					let user: User | null = null;
 
 					// Check if there's a farcaster record for this exact fid combination
@@ -413,19 +395,6 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 									updatedAt: new Date(),
 								}),
 							]);
-
-							// Also save custody wallet in db
-							await ctx.context.adapter.create({
-								model: "walletAddress",
-								data: [
-									{
-										userId: user.id,
-										address: resolvedFarcasterUser.custodyAddress,
-										chainId: 10, // optimism
-										isPrimary: true,
-									},
-								],
-							});
 						}
 					}
 

@@ -142,7 +142,7 @@ const siwf = (options) => ({
                         message: "SIWF Invalid Farcaster user",
                     });
                 }
-                // Look for existing user by their wallet addresses
+                // Look for existing user by their fid
                 let user = null;
                 // Check if there's a farcaster record for this exact fid combination
                 const farcasterUser = yield ctx.context.adapter.findOne({
@@ -197,23 +197,6 @@ const siwf = (options) => ({
                                 updatedAt: new Date(),
                             }),
                         ]);
-                        const resolvedFarcasterUser = yield options.resolveFarcasterUser({
-                            fid,
-                        });
-                        if (resolvedFarcasterUser) {
-                            // Also save custody wallet in db
-                            yield ctx.context.adapter.create({
-                                model: "walletAddress",
-                                data: [
-                                    {
-                                        userId: user.id,
-                                        address: resolvedFarcasterUser.custodyAddress,
-                                        chainId: 10, // optimism
-                                        isPrimary: true,
-                                    },
-                                ],
-                            });
-                        }
                     }
                 }
                 // Create session cookie and set it in the response
@@ -323,7 +306,7 @@ const siwf = (options) => ({
             }
             try {
                 const { fid } = ctx.body;
-                // Look for existing user by their wallet addresses
+                // Look for existing user by their fid
                 let user = null;
                 // Check if there's a farcaster record for this exact fid combination
                 const farcasterUser = yield ctx.context.adapter.findOne({
@@ -385,18 +368,6 @@ const siwf = (options) => ({
                                 updatedAt: new Date(),
                             }),
                         ]);
-                        // Also save custody wallet in db
-                        yield ctx.context.adapter.create({
-                            model: "walletAddress",
-                            data: [
-                                {
-                                    userId: user.id,
-                                    address: resolvedFarcasterUser.custodyAddress,
-                                    chainId: 10, // optimism
-                                    isPrimary: true,
-                                },
-                            ],
-                        });
                     }
                 }
                 return ctx.json({
