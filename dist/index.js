@@ -121,7 +121,7 @@ const siwf = (options) => ({
                 },
             },
         }, (ctx) => __awaiter(void 0, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e, _f, _g, _h;
+            var _a, _b, _c;
             const { token, user: userFromClient } = ctx.body;
             try {
                 // Verify SIWF token
@@ -197,28 +197,20 @@ const siwf = (options) => ({
                                 updatedAt: new Date(),
                             }),
                         ]);
-                        // Also save wallet addresses in db
-                        const { custodyAddress, verifiedAddresses } = (_e = (yield ((_d = options.resolveFarcasterUser) === null || _d === void 0 ? void 0 : _d.call(options, {
+                        const resolvedFarcasterUser = yield options.resolveFarcasterUser({
                             fid,
-                        })))) !== null && _e !== void 0 ? _e : {};
-                        const primaryEthWallet = (_g = (_f = verifiedAddresses === null || verifiedAddresses === void 0 ? void 0 : verifiedAddresses.primary) === null || _f === void 0 ? void 0 : _f.ethAddress) !== null && _g !== void 0 ? _g : custodyAddress;
-                        if (primaryEthWallet && custodyAddress) {
-                            const userId = user.id;
+                        });
+                        if (resolvedFarcasterUser) {
+                            // Also save custody wallet in db
                             yield ctx.context.adapter.create({
                                 model: "walletAddress",
                                 data: [
                                     {
-                                        userId,
-                                        address: custodyAddress,
+                                        userId: user.id,
+                                        address: resolvedFarcasterUser.custodyAddress,
                                         chainId: 10, // optimism
-                                        isPrimary: primaryEthWallet === custodyAddress,
+                                        isPrimary: true,
                                     },
-                                    ...((_h = verifiedAddresses === null || verifiedAddresses === void 0 ? void 0 : verifiedAddresses.ethAddresses.map((a) => ({
-                                        userId,
-                                        address: a,
-                                        chainId: 1, // ethereum
-                                        isPrimary: primaryEthWallet === a,
-                                    }))) !== null && _h !== void 0 ? _h : []),
                                 ],
                             });
                         }
@@ -243,6 +235,172 @@ const siwf = (options) => ({
                 return ctx.json({
                     success: true,
                     token: session.token,
+                    user: {
+                        id: user.id,
+                        fid,
+                        name: user.name,
+                        image: user.image,
+                    },
+                });
+            }
+            catch (error) {
+                logger.error("SIWF error happened", error);
+                if (error instanceof APIError) {
+                    throw error;
+                }
+                throw new APIError("UNAUTHORIZED", {
+                    status: 401,
+                    message: "SIWF Something went wrong. Please try again later.",
+                    error: error instanceof Error ? error.message : "Unknown error",
+                });
+            }
+        })),
+        createUser: createAuthEndpoint("/siwf/create", {
+            method: "POST",
+            requireHeaders: true,
+            headers: {
+                "x-better-auth-admin-key": z.string().min(1),
+            },
+            body: z.object({
+                fid: z.number().min(1),
+            }),
+            requireRequest: true,
+            metadata: {
+                openapi: {
+                    summary: "Create a Farcaster user",
+                    description: "Create a Farcaster user",
+                    tags: ["siwf"],
+                    parameters: [
+                        {
+                            name: "fid",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "number",
+                                description: "Farcaster user ID",
+                            },
+                        },
+                    ],
+                    headers: {
+                        "x-better-auth-admin-key": {
+                            type: "string",
+                            description: "API admin key to create a farcaster user from an admin endpoint",
+                        },
+                    },
+                    responses: {
+                        200: {
+                            description: "Farcaster user created",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        required: ["success"],
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Whether the Farcaster user was created",
+                                            },
+                                            user: {
+                                                $ref: "#/components/schemas/User",
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }, (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+            var _a, _b, _c;
+            const apiSecret = ctx.headers.get("x-better-auth-admin-key");
+            if (!apiSecret || apiSecret !== options.getAdminKey()) {
+                logger.error("Invalid API secret used to create a new farcaster user", { apiSecret });
+                throw new APIError("UNAUTHORIZED", {
+                    status: 401,
+                    message: "SIWF Something went wrong. Please try again later.",
+                });
+            }
+            try {
+                const { fid } = ctx.body;
+                // Look for existing user by their wallet addresses
+                let user = null;
+                // Check if there's a farcaster record for this exact fid combination
+                const farcasterUser = yield ctx.context.adapter.findOne({
+                    model: "farcaster",
+                    where: [{ field: "fid", operator: "eq", value: fid }],
+                });
+                if (farcasterUser) {
+                    // Get the user associated with the farcaster user
+                    user = yield ctx.context.adapter.findOne({
+                        model: "user",
+                        where: [
+                            {
+                                field: "id",
+                                operator: "eq",
+                                value: farcasterUser.userId,
+                            },
+                        ],
+                    });
+                }
+                // Create new user if not exists
+                if (!user) {
+                    const resolvedFarcasterUser = yield options.resolveFarcasterUser({
+                        fid,
+                    });
+                    if (!resolvedFarcasterUser) {
+                        throw new APIError("NOT_FOUND", {
+                            status: 404,
+                            message: "Farcaster user not found",
+                        });
+                    }
+                    user = yield ctx.context.internalAdapter.createUser({
+                        name: (_a = resolvedFarcasterUser.username) !== null && _a !== void 0 ? _a : fid.toString(),
+                        image: (_b = resolvedFarcasterUser.avatarUrl) !== null && _b !== void 0 ? _b : undefined,
+                        email: `${fid}@farcaster.emails`,
+                    });
+                    // Create farcaster record if not exists
+                    if (!farcasterUser) {
+                        yield Promise.all([
+                            // Create farcaster record
+                            ctx.context.adapter.create({
+                                model: "farcaster",
+                                data: {
+                                    userId: user.id,
+                                    fid,
+                                    username: (_c = resolvedFarcasterUser.username) !== null && _c !== void 0 ? _c : fid.toString(),
+                                    displayName: resolvedFarcasterUser.displayName,
+                                    avatarUrl: resolvedFarcasterUser.avatarUrl,
+                                    notificationDetails: [],
+                                    createdAt: new Date(),
+                                    updatedAt: new Date(),
+                                },
+                            }),
+                            // Create account record for farcaster authentication
+                            ctx.context.internalAdapter.createAccount({
+                                userId: user.id,
+                                providerId: "farcaster",
+                                accountId: `farcaster:${fid}`,
+                                createdAt: new Date(),
+                                updatedAt: new Date(),
+                            }),
+                        ]);
+                        // Also save custody wallet in db
+                        yield ctx.context.adapter.create({
+                            model: "walletAddress",
+                            data: [
+                                {
+                                    userId: user.id,
+                                    address: resolvedFarcasterUser.custodyAddress,
+                                    chainId: 10, // optimism
+                                    isPrimary: true,
+                                },
+                            ],
+                        });
+                    }
+                }
+                return ctx.json({
+                    success: true,
                     user: {
                         id: user.id,
                         fid,

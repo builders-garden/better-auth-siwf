@@ -4,7 +4,7 @@ Authenticate users via Farcaster using Better Auth. This plugin mirrors the deve
 
 - Server plugin: `siwf`
 - Client plugin: `siwfClient`
-- REST endpoints: `POST /siwf/verify`
+- REST endpoints: `POST /siwf/verify`, `POST /siwf/create` (admin only)
 
 References: see the official SIWE plugin docs for structure and expectations and an earlier community attempt for Farcaster-specific ideas: [SIWE Plugin Docs](https://www.better-auth.com/docs/plugins/siwe), it's also an expansion of this other plugin [Farcaster Auth Plugin](https://github.com/iamlotp/Farcaster-Auth-Plugin-Better-Auth-).
 
@@ -30,15 +30,17 @@ export const auth = betterAuth({
     siwf({
       // must match the domain used when verifying the Farcaster JWT
       domain: "app.example.com",
+      // required to enable the admin endpoint POST /siwf/create
+      getAdminKey: () => process.env.BETTER_AUTH_ADMIN_KEY || "",
        
       // Optional: resolve the user data and wallets from neynar for example
-      resolveFarcasterUser: async ({ fid }): Promise<ResolveFarcasterUserResult | null> => (
-        // see neynar docs for more information: https://docs.neynar.com/reference/fetch-bulk-users
+      // see neynar docs: https://docs.neynar.com/reference/fetch-bulk-users
+      resolveFarcasterUser: async ({ fid }): Promise<ResolveFarcasterUserResult | null> => {
         const data = await fetch(
           `https://api.neynar.com/v2/farcaster/user/bulk/?fids=${fid}`,
           {
             headers: {
-              "x-api-key": "NEYNAR_API_KEY",
+              "x-api-key": process.env.NEYNAR_API_KEY || "NEYNAR_API_DOCS",
             },
           }
         ).then(async (data) => await data.json());
@@ -65,7 +67,7 @@ export const auth = betterAuth({
             solAddresses: user.verified_addresses?.sol_addresses ?? undefined,
           },
         } satisfies ResolveFarcasterUserResult;
-      )
+      }
     })
   ]
 });
@@ -104,7 +106,7 @@ const result = await miniappSdk.quickAuth.getToken(); // result: { token: string
 
 
 ### 2) Verify and sign in
-Send the token and user details to the better authserver. On success, the Better Auth session cookie is set.
+Send the token and user details to the Better Auth server. On success, the Better Auth session cookie is set.
 
 ```ts
 const ctx = await miniappSdk.context;
@@ -155,11 +157,43 @@ const farcasterSignIn = async () => {
 
 ```
 
+### Admin: Create a Farcaster user (no sign-in)
+
+This endpoint lets you create a user for a given `fid` using your resolver (e.g., Neynar) without requiring a Quick Auth token. It is protected by an admin header.
+
+- Path: `POST /siwf/create`
+- Header: `x-better-auth-admin-key: <your-admin-key>` (must match `getAdminKey()` return value)
+- Body: `{ fid: number }`
+
+Example (curl):
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-better-auth-admin-key: $BETTER_AUTH_ADMIN_KEY" \
+  -d '{"fid": 12345}' \
+  https://your-api.example.com/api/auth/siwf/create
+```
+
+Client example:
+
+```ts
+const { data, error } = await authClient.$fetch("/siwf/create", {
+  method: "POST",
+  headers: {
+    "x-better-auth-admin-key": process.env.NEXT_PUBLIC_BETTER_AUTH_ADMIN_KEY!,
+  },
+  body: { fid: 12345 },
+  throw: false,
+});
+```
+
 ## Configuration Options
 
 Server options accepted by `siwf`:
 
 - `domain` (string, required): Domain expected in the Farcaster JWT. Must match exactly.
+- `getAdminKey` (function, required for admin endpoint): Returns the string key used to authorize `POST /siwf/create`.
 - `resolveFarcasterUser` (optional): Enrich user record with Farcaster profile and wallet addresses. If provided, the plugin will also persist wallet addresses in `walletAddress`.
 - `schema` (optional): Extend or override the default plugin schema via Better Auth `mergeSchema`.
 

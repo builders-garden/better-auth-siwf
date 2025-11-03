@@ -205,30 +205,20 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 								}),
 							]);
 
-							// Also save wallet addresses in db
-							const { custodyAddress, verifiedAddresses } =
-								(await options.resolveFarcasterUser?.({
-									fid,
-								})) ?? {};
-							const primaryEthWallet =
-								verifiedAddresses?.primary?.ethAddress ?? custodyAddress;
-							if (primaryEthWallet && custodyAddress) {
-								const userId = user.id;
+							const resolvedFarcasterUser = await options.resolveFarcasterUser({
+								fid,
+							});
+							if (resolvedFarcasterUser) {
+								// Also save custody wallet in db
 								await ctx.context.adapter.create({
 									model: "walletAddress",
 									data: [
 										{
-											userId,
-											address: custodyAddress,
+											userId: user.id,
+											address: resolvedFarcasterUser.custodyAddress,
 											chainId: 10, // optimism
-											isPrimary: primaryEthWallet === custodyAddress,
+											isPrimary: true,
 										},
-										...(verifiedAddresses?.ethAddresses.map((a: string) => ({
-											userId,
-											address: a,
-											chainId: 1, // ethereum
-											isPrimary: primaryEthWallet === a,
-										})) ?? []),
 									],
 								});
 							}
@@ -261,6 +251,186 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 					return ctx.json({
 						success: true,
 						token: session.token,
+						user: {
+							id: user.id,
+							fid,
+							name: user.name,
+							image: user.image,
+						},
+					});
+				} catch (error: unknown) {
+					logger.error("SIWF error happened", error);
+					if (error instanceof APIError) {
+						throw error;
+					}
+					throw new APIError("UNAUTHORIZED", {
+						status: 401,
+						message: "SIWF Something went wrong. Please try again later.",
+						error: error instanceof Error ? error.message : "Unknown error",
+					});
+				}
+			},
+		),
+		createUser: createAuthEndpoint(
+			"/siwf/create",
+			{
+				method: "POST",
+				requireHeaders: true,
+				headers: {
+					"x-better-auth-admin-key": z.string().min(1),
+				},
+				body: z.object({
+					fid: z.number().min(1),
+				}),
+				requireRequest: true,
+				metadata: {
+					openapi: {
+						summary: "Create a Farcaster user",
+						description: "Create a Farcaster user",
+						tags: ["siwf"],
+						parameters: [
+							{
+								name: "fid",
+								in: "query",
+								required: true,
+								schema: {
+									type: "number",
+									description: "Farcaster user ID",
+								},
+							},
+						],
+						headers: {
+							"x-better-auth-admin-key": {
+								type: "string",
+								description:
+									"API admin key to create a farcaster user from an admin endpoint",
+							},
+						},
+						responses: {
+							200: {
+								description: "Farcaster user created",
+								content: {
+									"application/json": {
+										schema: {
+											type: "object",
+											required: ["success"],
+											properties: {
+												success: {
+													type: "boolean",
+													description: "Whether the Farcaster user was created",
+												},
+												user: {
+													$ref: "#/components/schemas/User",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			async (ctx) => {
+				const apiSecret = ctx.headers.get("x-better-auth-admin-key");
+				if (!apiSecret || apiSecret !== options.getAdminKey()) {
+					logger.error(
+						"Invalid API secret used to create a new farcaster user",
+						{ apiSecret },
+					);
+					throw new APIError("UNAUTHORIZED", {
+						status: 401,
+						message: "SIWF Something went wrong. Please try again later.",
+					});
+				}
+
+				try {
+					const { fid } = ctx.body;
+
+					// Look for existing user by their wallet addresses
+					let user: User | null = null;
+
+					// Check if there's a farcaster record for this exact fid combination
+					const farcasterUser: FarcasterUser | null =
+						await ctx.context.adapter.findOne({
+							model: "farcaster",
+							where: [{ field: "fid", operator: "eq", value: fid }],
+						});
+					if (farcasterUser) {
+						// Get the user associated with the farcaster user
+						user = await ctx.context.adapter.findOne({
+							model: "user",
+							where: [
+								{
+									field: "id",
+									operator: "eq",
+									value: farcasterUser.userId,
+								},
+							],
+						});
+					}
+
+					// Create new user if not exists
+					if (!user) {
+						const resolvedFarcasterUser = await options.resolveFarcasterUser({
+							fid,
+						});
+						if (!resolvedFarcasterUser) {
+							throw new APIError("NOT_FOUND", {
+								status: 404,
+								message: "Farcaster user not found",
+							});
+						}
+						user = await ctx.context.internalAdapter.createUser({
+							name: resolvedFarcasterUser.username ?? fid.toString(),
+							image: resolvedFarcasterUser.avatarUrl ?? undefined,
+							email: `${fid}@farcaster.emails`,
+						});
+
+						// Create farcaster record if not exists
+						if (!farcasterUser) {
+							await Promise.all([
+								// Create farcaster record
+								ctx.context.adapter.create({
+									model: "farcaster",
+									data: {
+										userId: user.id,
+										fid,
+										username: resolvedFarcasterUser.username ?? fid.toString(),
+										displayName: resolvedFarcasterUser.displayName,
+										avatarUrl: resolvedFarcasterUser.avatarUrl,
+										notificationDetails: [],
+										createdAt: new Date(),
+										updatedAt: new Date(),
+									},
+								}),
+								// Create account record for farcaster authentication
+								ctx.context.internalAdapter.createAccount({
+									userId: user.id,
+									providerId: "farcaster",
+									accountId: `farcaster:${fid}`,
+									createdAt: new Date(),
+									updatedAt: new Date(),
+								}),
+							]);
+
+							// Also save custody wallet in db
+							await ctx.context.adapter.create({
+								model: "walletAddress",
+								data: [
+									{
+										userId: user.id,
+										address: resolvedFarcasterUser.custodyAddress,
+										chainId: 10, // optimism
+										isPrimary: true,
+									},
+								],
+							});
+						}
+					}
+
+					return ctx.json({
+						success: true,
 						user: {
 							id: user.id,
 							fid,

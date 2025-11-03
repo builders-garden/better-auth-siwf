@@ -23,7 +23,8 @@ export type ResolveFarcasterUserResult = {
 };
 export type SIWFPluginOptions = {
     domain: string;
-    resolveFarcasterUser?: (args: ResolveFarcasterUserArgs) => Promise<ResolveFarcasterUserResult | null>;
+    getAdminKey: () => string;
+    resolveFarcasterUser: (args: ResolveFarcasterUserArgs) => Promise<ResolveFarcasterUserResult | null>;
     schema?: InferOptionSchema<typeof schema>;
 };
 /**
@@ -55,9 +56,22 @@ export type SIWFVerifyResponse = {
         };
     };
 };
+export type SIWFCreateArgs = {
+    fid: number;
+};
+export type SIWFCreateResponse = {
+    success: boolean;
+    user: {
+        id: string;
+        fid: number;
+        name: string;
+        image?: string | null;
+    };
+};
 export type SIWFClientType = {
     siwf: {
         verify: (args: SIWFVerifyArgs) => Promise<SIWFVerifyResponse>;
+        create: (args: SIWFCreateArgs) => Promise<SIWFCreateResponse>;
     };
 };
 /**
