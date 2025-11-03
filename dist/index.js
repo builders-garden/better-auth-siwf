@@ -218,12 +218,7 @@ const siwf = (options) => ({
                 return ctx.json({
                     success: true,
                     token: session.token,
-                    user: {
-                        id: user.id,
-                        fid,
-                        name: user.name,
-                        image: user.image,
-                    },
+                    user,
                 });
             }
             catch (error) {
@@ -372,12 +367,7 @@ const siwf = (options) => ({
                 }
                 return ctx.json({
                     success: true,
-                    user: {
-                        id: user.id,
-                        fid,
-                        name: user.name,
-                        image: user.image,
-                    },
+                    user,
                 });
             }
             catch (error) {

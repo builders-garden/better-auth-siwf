@@ -233,12 +233,7 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 					return ctx.json({
 						success: true,
 						token: session.token,
-						user: {
-							id: user.id,
-							fid,
-							name: user.name,
-							image: user.image,
-						},
+						user,
 					});
 				} catch (error: unknown) {
 					logger.error("SIWF error happened", error);
@@ -400,12 +395,7 @@ const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 
 					return ctx.json({
 						success: true,
-						user: {
-							id: user.id,
-							fid,
-							name: user.name,
-							image: user.image,
-						},
+						user,
 					});
 				} catch (error: unknown) {
 					logger.error("SIWF error happened", error);
