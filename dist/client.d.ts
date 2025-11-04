@@ -1,5 +1,6 @@
+import type { BetterFetchResponse } from "@better-fetch/fetch";
 import type { siwf } from "./index.js";
-import type { SIWFSignInAuthData } from "./types.js";
+import type { SIWFLinkResponse, SIWFSignInAuthData, SIWFSignInResponse, SIWFUnlinkResponse } from "./types.js";
 type SIWFPlugin = typeof siwf;
 /**
  * Client plugin for Sign In With Farcaster
@@ -11,50 +12,23 @@ export declare const siwfClient: () => {
         /**
          * Sign in with Farcaster
          * @param authData - Authenticated data from the Farcaster MiniApp SDK
-         * @returns
+         * @returns BetterFetchResponse<SIWFSignInResponse>
+         * @throws APIError if the sign in fails
          */
-        signInWithFarcaster: (authData: SIWFSignInAuthData) => Promise<{
-            data: unknown;
-            error: null;
-        } | {
-            data: null;
-            error: {
-                message?: string | undefined;
-                status: number;
-                statusText: string;
-            };
-        }>;
+        signInWithFarcaster: (authData: SIWFSignInAuthData) => Promise<BetterFetchResponse<SIWFSignInResponse>>;
         /**
          * Link current user account with Farcaster
          * @param authData - Authenticated data from the Farcaster MiniApp SDK
-         * @returns
+         * @returns BetterFetchResponse<SIWFLinkResponse>
+         * @throws APIError if the link fails
          */
-        linkFarcaster: (authData: SIWFSignInAuthData) => Promise<{
-            data: unknown;
-            error: null;
-        } | {
-            data: null;
-            error: {
-                message?: string | undefined;
-                status: number;
-                statusText: string;
-            };
-        }>;
+        linkFarcaster: (authData: SIWFSignInAuthData) => Promise<BetterFetchResponse<SIWFLinkResponse>>;
         /**
          * Unlink current user account from Farcaster
-         * @returns
+         * @returns BetterFetchResponse<SIWFUnlinkResponse>
+         * @throws APIError if the unlink fails
          */
-        unlinkFarcaster: () => Promise<{
-            data: unknown;
-            error: null;
-        } | {
-            data: null;
-            error: {
-                message?: string | undefined;
-                status: number;
-                statusText: string;
-            };
-        }>;
+        unlinkFarcaster: () => Promise<BetterFetchResponse<SIWFUnlinkResponse>>;
     };
 };
 export default siwfClient;

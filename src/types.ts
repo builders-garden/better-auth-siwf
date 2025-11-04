@@ -1,3 +1,4 @@
+import type { BetterFetchResponse } from "@better-fetch/fetch";
 import type { Account, InferOptionSchema, User } from "better-auth/types";
 import type { schema } from "./schema.js";
 
@@ -16,24 +17,9 @@ export type SIWFPluginOptions = {
 	allowUserToLink?: boolean;
 	/**
 	 * The schema to use for the SIWF plugin
-	 * @see schema
+	 * {@link better-auth-siwf#schema | SIWF schema}
 	 */
 	schema?: InferOptionSchema<typeof schema> | undefined;
-};
-
-/**
- * SIWF Client Type, returned by the SIWF client plugin
- */
-export type SIWFClientType = {
-	siwf: {
-		signInWithFarcaster: (
-			authData: SIWFSignInAuthData,
-		) => Promise<SIWFSignInResponse>;
-		linkFarcaster: (
-			authData: SIWFSignInAuthData,
-		) => Promise<SIWFSignInResponse>;
-		unlinkFarcaster: () => Promise<SIWFSignInResponse>;
-	};
 };
 
 /**
@@ -63,6 +49,43 @@ export type SIWFSignInResponse = {
 		success: boolean;
 		token: string;
 		user: User;
+	};
+};
+
+/**
+ * SIWF Link Response, returned by the SIWF link endpoint
+ * @throws APIError if the link fails
+ */
+export type SIWFLinkResponse = {
+	data: {
+		success: boolean;
+		message: string;
+	};
+};
+
+/**
+ * SIWF Unlink Response, returned by the SIWF unlink endpoint
+ * @throws APIError if the unlink fails
+ */
+export type SIWFUnlinkResponse = {
+	data: {
+		success: boolean;
+		message: string;
+	};
+};
+
+/**
+ * SIWF Client Type, returned by the SIWF client plugin
+ */
+export type SIWFClientType = {
+	siwf: {
+		signInWithFarcaster: (
+			authData: SIWFSignInAuthData,
+		) => Promise<BetterFetchResponse<SIWFSignInResponse>>;
+		linkFarcaster: (
+			authData: SIWFSignInAuthData,
+		) => Promise<BetterFetchResponse<SIWFLinkResponse>>;
+		unlinkFarcaster: () => Promise<BetterFetchResponse<SIWFUnlinkResponse>>;
 	};
 };
 

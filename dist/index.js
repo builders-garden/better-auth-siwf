@@ -455,7 +455,7 @@ export const siwf = (options) => ({
                     update: {
                         farcasterFid: fid,
                         farcasterUsername: (_e = userFromClient.username) !== null && _e !== void 0 ? _e : fid.toString(),
-                        farcasterDisplayName: (_f = userFromClient.displayName) !== null && _f !== void 0 ? _f : null,
+                        farcasterDisplayName: (_f = userFromClient.displayName) !== null && _f !== void 0 ? _f : undefined,
                     },
                 });
                 return ctx.json({

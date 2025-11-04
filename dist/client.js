@@ -17,7 +17,8 @@ export const siwfClient = () => ({
         /**
          * Sign in with Farcaster
          * @param authData - Authenticated data from the Farcaster MiniApp SDK
-         * @returns
+         * @returns BetterFetchResponse<SIWFSignInResponse>
+         * @throws APIError if the sign in fails
          */
         signInWithFarcaster: (authData) => __awaiter(void 0, void 0, void 0, function* () {
             const response = yield $fetch("/siwf/signin", {
@@ -29,7 +30,8 @@ export const siwfClient = () => ({
         /**
          * Link current user account with Farcaster
          * @param authData - Authenticated data from the Farcaster MiniApp SDK
-         * @returns
+         * @returns BetterFetchResponse<SIWFLinkResponse>
+         * @throws APIError if the link fails
          */
         linkFarcaster: (authData) => __awaiter(void 0, void 0, void 0, function* () {
             const response = yield $fetch("/siwf/link", {
@@ -40,7 +42,8 @@ export const siwfClient = () => ({
         }),
         /**
          * Unlink current user account from Farcaster
-         * @returns
+         * @returns BetterFetchResponse<SIWFUnlinkResponse>
+         * @throws APIError if the unlink fails
          */
         unlinkFarcaster: () => __awaiter(void 0, void 0, void 0, function* () {
             const response = yield $fetch("/siwf/unlink", {

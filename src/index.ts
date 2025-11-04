@@ -11,9 +11,11 @@ import type { FarcasterUser, SIWFPluginOptions } from "./types.js";
 
 export type {
 	FarcasterUser,
+	SIWFLinkResponse,
 	SIWFPluginOptions,
 	SIWFSignInAuthData,
 	SIWFSignInResponse,
+	SIWFUnlinkResponse,
 } from "./types.js";
 
 /**
@@ -499,7 +501,7 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 						update: {
 							farcasterFid: fid,
 							farcasterUsername: userFromClient.username ?? fid.toString(),
-							farcasterDisplayName: userFromClient.displayName ?? null,
+							farcasterDisplayName: userFromClient.displayName ?? undefined,
 						},
 					});
 

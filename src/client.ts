@@ -1,6 +1,12 @@
+import type { BetterFetchResponse } from "@better-fetch/fetch";
 import type { BetterAuthClientPlugin } from "better-auth";
 import type { siwf } from "./index.js";
-import type { SIWFSignInAuthData } from "./types.js";
+import type {
+	SIWFLinkResponse,
+	SIWFSignInAuthData,
+	SIWFSignInResponse,
+	SIWFUnlinkResponse,
+} from "./types.js";
 
 type SIWFPlugin = typeof siwf;
 
@@ -15,10 +21,13 @@ export const siwfClient = () =>
 			/**
 			 * Sign in with Farcaster
 			 * @param authData - Authenticated data from the Farcaster MiniApp SDK
-			 * @returns
+			 * @returns BetterFetchResponse<SIWFSignInResponse>
+			 * @throws APIError if the sign in fails
 			 */
-			signInWithFarcaster: async (authData: SIWFSignInAuthData) => {
-				const response = await $fetch("/siwf/signin", {
+			signInWithFarcaster: async (
+				authData: SIWFSignInAuthData,
+			): Promise<BetterFetchResponse<SIWFSignInResponse>> => {
+				const response = await $fetch<SIWFSignInResponse>("/siwf/signin", {
 					method: "POST",
 					body: authData,
 				});
@@ -29,10 +38,13 @@ export const siwfClient = () =>
 			/**
 			 * Link current user account with Farcaster
 			 * @param authData - Authenticated data from the Farcaster MiniApp SDK
-			 * @returns
+			 * @returns BetterFetchResponse<SIWFLinkResponse>
+			 * @throws APIError if the link fails
 			 */
-			linkFarcaster: async (authData: SIWFSignInAuthData) => {
-				const response = await $fetch("/siwf/link", {
+			linkFarcaster: async (
+				authData: SIWFSignInAuthData,
+			): Promise<BetterFetchResponse<SIWFLinkResponse>> => {
+				const response = await $fetch<SIWFLinkResponse>("/siwf/link", {
 					method: "POST",
 					body: authData,
 				});
@@ -42,10 +54,13 @@ export const siwfClient = () =>
 
 			/**
 			 * Unlink current user account from Farcaster
-			 * @returns
+			 * @returns BetterFetchResponse<SIWFUnlinkResponse>
+			 * @throws APIError if the unlink fails
 			 */
-			unlinkFarcaster: async () => {
-				const response = await $fetch("/siwf/unlink", {
+			unlinkFarcaster: async (): Promise<
+				BetterFetchResponse<SIWFUnlinkResponse>
+			> => {
+				const response = await $fetch<SIWFUnlinkResponse>("/siwf/unlink", {
 					method: "POST",
 				});
 
