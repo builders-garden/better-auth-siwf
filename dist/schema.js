@@ -1,5 +1,41 @@
 import { z } from "zod";
 export const schema = {
+    user: {
+        modelName: "user",
+        fields: {
+            farcasterFid: {
+                type: "number",
+                required: false,
+                unique: true,
+            },
+            farcasterUsername: {
+                type: "string",
+                required: false,
+            },
+            farcasterDisplayName: {
+                type: "string",
+                required: false,
+            },
+        },
+    },
+    account: {
+        modelName: "account",
+        fields: {
+            farcasterFid: {
+                type: "number",
+                required: false,
+                unique: true,
+            },
+            farcasterUsername: {
+                type: "string",
+                required: false,
+            },
+            farcasterDisplayName: {
+                type: "string",
+                required: false,
+            },
+        },
+    },
     farcaster: {
         modelName: "farcaster",
         fields: {

@@ -29,7 +29,9 @@ export const auth = betterAuth({
   plugins: [
     siwf({
       // must match the domain used when verifying the Farcaster JWT
-      domain: "app.example.com"
+      domain: "app.example.com",
+      // (optional) whether the user is allowed to link their Farcaster account to their Better Auth account
+      allowUserToLink: true,
     })
   ]
 });
@@ -50,7 +52,10 @@ import { createAuthClient } from "better-auth/react";
 import { siwfClient, type SIWFClientType } from "better-auth-siwf";
 
 const client = createAuthClient({
-  plugins: [siwfClient()]
+  plugins: [siwfClient()],
+  fetchOptions: {
+    credentials: "include", // Required for session cookies
+  },
 });
 
 // Type the client to include custom farcaster methods

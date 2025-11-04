@@ -1,7 +1,8 @@
 {
 	"name": "better-auth-siwf",
-	"version": "1.0.18",
+	"version": "1.0.19",
 	"description": "better-auth plugin for Sign In With Farcaster",
+	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
@@ -9,8 +10,16 @@
 				"types": "./dist/index.d.ts",
 				"default": "./dist/index.js"
 			}
+		},
+		"./client": {
+			"types": "./dist/client.d.ts",
+			"import": "./dist/client.js",
+			"require": "./dist/client.cjs"
 		}
 	},
+	"files": [
+		"dist"
+	],
 	"type": "module",
 	"scripts": {
 		"build": "tsc && chmod +x ./dist/index.js"
@@ -18,13 +27,21 @@
 	"keywords": [
 		"better-auth",
 		"farcaster",
-		"siwf"
+		"siwf",
+		"plugin"
 	],
 	"author": "buildersgarden",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/builders-garden/better-auth-siwf.git"
+	},
+	"bugs": {
+		"url": "https://github.com/builders-garden/better-auth-siwf/issues"
+	},
+	"homepage": "https://github.com/builders-garden/better-auth-siwf#readme",
+	"peerDependencies": {
+		"better-auth": "^1.0.0"
 	},
 	"dependencies": {
 		"@farcaster/quick-auth": "^0.0.8",
@@ -33,7 +50,6 @@
 	},
 	"devDependencies": {
 		"@types/node": "^24.7.2",
-		"typescript": "^5.9.3"
-	},
-	"packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad"
+		"typescript": "^5"
+	}
 }
