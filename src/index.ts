@@ -1,9 +1,12 @@
 import { createClient } from "@farcaster/quick-auth";
 import { logger } from "better-auth";
-import { APIError, sessionMiddleware } from "better-auth/api";
+import {
+	APIError,
+	createAuthEndpoint,
+	sessionMiddleware,
+} from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { mergeSchema } from "better-auth/db";
-import { createAuthEndpoint } from "better-auth/plugins";
 import type { Account, BetterAuthPlugin, User } from "better-auth/types";
 import { z } from "zod";
 import { schema } from "./schema.js";
@@ -248,7 +251,6 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 					// Create session cookie and set it in the response
 					const session = await ctx.context.internalAdapter.createSession(
 						user.id,
-						ctx,
 					);
 					if (!session) {
 						throw new APIError("INTERNAL_SERVER_ERROR", {
