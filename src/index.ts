@@ -8,7 +8,7 @@ import {
 import { setSessionCookie } from "better-auth/cookies";
 import { mergeSchema } from "better-auth/db";
 import type { Account, BetterAuthPlugin, User } from "better-auth/types";
-import { isAddressEqual } from "viem/utils";
+import { getAddress, isAddressEqual } from "viem/utils";
 import { z } from "zod";
 import { schema } from "./schema.js";
 import type { FarcasterUser, SIWFPluginOptions } from "./types.js";
@@ -257,18 +257,16 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 								// save custody wallet in db
 								ctx.context.adapter.create({
 									model: "walletAddress",
-									data: [
-										{
-											userId: user.id,
-											address: resolvedFarcasterUser.custodyAddress,
-											chainId: 10, // optimism
-											isPrimary: isAddressEqual(
-												resolvedFarcasterUser.custodyAddress as `0x${string}`,
-												primaryEthAddress as `0x${string}`,
-											),
-											createdAt: new Date(),
-										},
-									],
+									data: {
+										userId: user.id,
+										address: getAddress(resolvedFarcasterUser.custodyAddress),
+										chainId: 10, // optimism
+										isPrimary: isAddressEqual(
+											resolvedFarcasterUser.custodyAddress as `0x${string}`,
+											primaryEthAddress as `0x${string}`,
+										),
+										createdAt: new Date(),
+									},
 								}),
 							]);
 
@@ -279,7 +277,7 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 									model: "walletAddress",
 									data: {
 										userId: user.id,
-										address: ethAddress,
+										address: getAddress(ethAddress),
 										chainId: 1, // ethereum
 										isPrimary: isAddressEqual(
 											ethAddress as `0x${string}`,

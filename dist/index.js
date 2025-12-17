@@ -12,7 +12,7 @@ import { logger } from "better-auth";
 import { APIError, createAuthEndpoint, sessionMiddleware, } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { mergeSchema } from "better-auth/db";
-import { isAddressEqual } from "viem/utils";
+import { getAddress, isAddressEqual } from "viem/utils";
 import { z } from "zod";
 import { schema } from "./schema.js";
 /**
@@ -225,15 +225,13 @@ export const siwf = (options) => ({
                             // save custody wallet in db
                             ctx.context.adapter.create({
                                 model: "walletAddress",
-                                data: [
-                                    {
-                                        userId: user.id,
-                                        address: resolvedFarcasterUser.custodyAddress,
-                                        chainId: 10, // optimism
-                                        isPrimary: isAddressEqual(resolvedFarcasterUser.custodyAddress, primaryEthAddress),
-                                        createdAt: new Date(),
-                                    },
-                                ],
+                                data: {
+                                    userId: user.id,
+                                    address: getAddress(resolvedFarcasterUser.custodyAddress),
+                                    chainId: 10, // optimism
+                                    isPrimary: isAddressEqual(resolvedFarcasterUser.custodyAddress, primaryEthAddress),
+                                    createdAt: new Date(),
+                                },
                             }),
                         ]);
                         // save all verified eth addresses in db
@@ -243,7 +241,7 @@ export const siwf = (options) => ({
                                 model: "walletAddress",
                                 data: {
                                     userId: user.id,
-                                    address: ethAddress,
+                                    address: getAddress(ethAddress),
                                     chainId: 1, // ethereum
                                     isPrimary: isAddressEqual(ethAddress, primaryEthAddress),
                                     createdAt: new Date(),
