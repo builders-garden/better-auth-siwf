@@ -15,6 +15,8 @@ import type { FarcasterUser, SIWFPluginOptions } from "./types.js";
 
 export type {
 	FarcasterUser,
+	ResolveFarcasterUserArgs,
+	ResolveFarcasterUserResult,
 	SIWFLinkResponse,
 	SIWFPluginOptions,
 	SIWFSignInAuthData,
