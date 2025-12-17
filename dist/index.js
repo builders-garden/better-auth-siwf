@@ -231,6 +231,7 @@ export const siwf = (options) => ({
                                         address: resolvedFarcasterUser.custodyAddress,
                                         chainId: 10, // optimism
                                         isPrimary: isAddressEqual(resolvedFarcasterUser.custodyAddress, primaryEthAddress),
+                                        createdAt: new Date(),
                                     },
                                 ],
                             }),
@@ -245,6 +246,7 @@ export const siwf = (options) => ({
                                     address: ethAddress,
                                     chainId: 1, // ethereum
                                     isPrimary: isAddressEqual(ethAddress, primaryEthAddress),
+                                    createdAt: new Date(),
                                 },
                             });
                         }

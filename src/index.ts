@@ -266,6 +266,7 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 												resolvedFarcasterUser.custodyAddress as `0x${string}`,
 												primaryEthAddress as `0x${string}`,
 											),
+											createdAt: new Date(),
 										},
 									],
 								}),
@@ -284,6 +285,7 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 											ethAddress as `0x${string}`,
 											primaryEthAddress as `0x${string}`,
 										),
+										createdAt: new Date(),
 									},
 								});
 							}
