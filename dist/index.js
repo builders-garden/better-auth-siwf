@@ -12,19 +12,11 @@ import { logger } from "better-auth";
 import { APIError, createAuthEndpoint, sessionMiddleware, } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { mergeSchema } from "better-auth/db";
+import { isAddressEqual } from "viem/utils";
 import { z } from "zod";
 import { schema } from "./schema.js";
 /**
  * Farcaster SIWF authentication plugin for Better Auth.
- *
- * @example
- * ```ts
- * import { siwf } from "better-auth-siwf";
- *
- * const auth = betterAuth({
- *   plugins: [siwf({ hostname: "example.com" })],
- * });
- * ```
  */
 export const siwf = (options) => ({
     id: "siwf",
@@ -174,13 +166,22 @@ export const siwf = (options) => ({
                 }
                 // Create new user if not exists
                 if (!user) {
+                    const resolvedFarcasterUser = yield options.resolveFarcasterUser({
+                        fid,
+                    });
+                    if (!resolvedFarcasterUser) {
+                        throw new APIError("UNAUTHORIZED", {
+                            message: "SIWF Farcaster user not found.",
+                        });
+                    }
+                    const primaryEthAddress = (_a = resolvedFarcasterUser.verifiedAddresses.primary.ethAddress) !== null && _a !== void 0 ? _a : resolvedFarcasterUser.custodyAddress;
                     user = yield ctx.context.internalAdapter.createUser({
-                        name: (_a = userFromClient.username) !== null && _a !== void 0 ? _a : fid.toString(),
-                        image: (_b = userFromClient.pfpUrl) !== null && _b !== void 0 ? _b : undefined,
+                        name: (_b = resolvedFarcasterUser.username) !== null && _b !== void 0 ? _b : fid.toString(),
+                        image: resolvedFarcasterUser.avatarUrl,
                         email: `${fid}@farcaster.emails`,
                         farcasterFid: fid,
-                        farcasterUsername: (_c = userFromClient.username) !== null && _c !== void 0 ? _c : fid.toString(),
-                        farcasterDisplayName: (_d = userFromClient.displayName) !== null && _d !== void 0 ? _d : undefined,
+                        farcasterUsername: (_c = resolvedFarcasterUser.username) !== null && _c !== void 0 ? _c : fid.toString(),
+                        farcasterDisplayName: (_d = resolvedFarcasterUser.displayName) !== null && _d !== void 0 ? _d : undefined,
                     });
                     // Create farcaster record if not exists
                     if (!farcasterUser) {
@@ -191,9 +192,9 @@ export const siwf = (options) => ({
                                 data: {
                                     userId: user.id,
                                     fid,
-                                    username: (_e = userFromClient.username) !== null && _e !== void 0 ? _e : fid.toString(),
-                                    displayName: userFromClient.displayName,
-                                    avatarUrl: userFromClient.pfpUrl,
+                                    username: (_e = resolvedFarcasterUser.username) !== null && _e !== void 0 ? _e : fid.toString(),
+                                    displayName: resolvedFarcasterUser.displayName,
+                                    avatarUrl: resolvedFarcasterUser.avatarUrl,
                                     notificationDetails: (_f = userFromClient.notificationDetails) !== null && _f !== void 0 ? _f : [],
                                     createdAt: new Date(),
                                     updatedAt: new Date(),
@@ -205,8 +206,8 @@ export const siwf = (options) => ({
                                 providerId: "farcaster",
                                 accountId: `farcaster:${fid}`,
                                 farcasterFid: fid,
-                                farcasterUsername: (_g = userFromClient.username) !== null && _g !== void 0 ? _g : fid.toString(),
-                                farcasterDisplayName: (_h = userFromClient.displayName) !== null && _h !== void 0 ? _h : undefined,
+                                farcasterUsername: (_g = resolvedFarcasterUser.username) !== null && _g !== void 0 ? _g : fid.toString(),
+                                farcasterDisplayName: (_h = resolvedFarcasterUser.displayName) !== null && _h !== void 0 ? _h : undefined,
                                 createdAt: new Date(),
                                 updatedAt: new Date(),
                             }),
@@ -216,12 +217,37 @@ export const siwf = (options) => ({
                                 where: [{ field: "id", value: user.id }],
                                 update: {
                                     farcasterFid: fid,
-                                    farcasterUsername: (_j = userFromClient.username) !== null && _j !== void 0 ? _j : fid.toString(),
-                                    farcasterDisplayName: (_k = userFromClient.displayName) !== null && _k !== void 0 ? _k : undefined,
+                                    farcasterUsername: (_j = resolvedFarcasterUser.username) !== null && _j !== void 0 ? _j : fid.toString(),
+                                    farcasterDisplayName: (_k = resolvedFarcasterUser.displayName) !== null && _k !== void 0 ? _k : undefined,
                                     updatedAt: new Date(),
                                 },
                             }),
+                            // save custody wallet in db
+                            ctx.context.adapter.create({
+                                model: "walletAddress",
+                                data: [
+                                    {
+                                        userId: user.id,
+                                        address: resolvedFarcasterUser.custodyAddress,
+                                        chainId: 10, // optimism
+                                        isPrimary: isAddressEqual(resolvedFarcasterUser.custodyAddress, primaryEthAddress),
+                                    },
+                                ],
+                            }),
                         ]);
+                        // save all verified eth addresses in db
+                        for (const ethAddress of resolvedFarcasterUser.verifiedAddresses
+                            .ethAddresses) {
+                            yield ctx.context.adapter.create({
+                                model: "walletAddress",
+                                data: {
+                                    userId: user.id,
+                                    address: ethAddress,
+                                    chainId: 1, // ethereum
+                                    isPrimary: isAddressEqual(ethAddress, primaryEthAddress),
+                                },
+                            });
+                        }
                     }
                 }
                 // Create session cookie and set it in the response
@@ -420,15 +446,23 @@ export const siwf = (options) => ({
                         message: "This Farcaster account is already linked to another user",
                     });
                 }
+                const resolvedFarcasterUser = yield options.resolveFarcasterUser({
+                    fid,
+                });
+                if (!resolvedFarcasterUser) {
+                    throw new APIError("UNAUTHORIZED", {
+                        message: "SIWF Farcaster user not found.",
+                    });
+                }
                 if (!existingFarcaster) {
                     yield ctx.context.adapter.create({
                         model: "farcaster",
                         data: {
                             userId: session.user.id,
                             fid,
-                            username: (_b = userFromClient.username) !== null && _b !== void 0 ? _b : fid.toString(),
-                            displayName: userFromClient.displayName,
-                            avatarUrl: userFromClient.pfpUrl,
+                            username: (_b = resolvedFarcasterUser.username) !== null && _b !== void 0 ? _b : fid.toString(),
+                            displayName: resolvedFarcasterUser.displayName,
+                            avatarUrl: resolvedFarcasterUser.avatarUrl,
                             notificationDetails: (_c = userFromClient.notificationDetails) !== null && _c !== void 0 ? _c : [],
                             createdAt: new Date(),
                             updatedAt: new Date(),
@@ -443,8 +477,8 @@ export const siwf = (options) => ({
                         providerId: "farcaster",
                         accountId: `farcaster:${fid}`,
                         farcasterFid: fid,
-                        farcasterUsername: (_d = userFromClient.username) !== null && _d !== void 0 ? _d : fid.toString(),
-                        farcasterDisplayName: userFromClient.displayName,
+                        farcasterUsername: (_d = resolvedFarcasterUser.username) !== null && _d !== void 0 ? _d : fid.toString(),
+                        farcasterDisplayName: resolvedFarcasterUser.displayName,
                     },
                 });
                 // Update user with Farcaster account details
@@ -453,8 +487,8 @@ export const siwf = (options) => ({
                     where: [{ field: "id", value: session.user.id }],
                     update: {
                         farcasterFid: fid,
-                        farcasterUsername: (_e = userFromClient.username) !== null && _e !== void 0 ? _e : fid.toString(),
-                        farcasterDisplayName: (_f = userFromClient.displayName) !== null && _f !== void 0 ? _f : undefined,
+                        farcasterUsername: (_e = resolvedFarcasterUser.username) !== null && _e !== void 0 ? _e : fid.toString(),
+                        farcasterDisplayName: (_f = resolvedFarcasterUser.displayName) !== null && _f !== void 0 ? _f : undefined,
                     },
                 });
                 return ctx.json({

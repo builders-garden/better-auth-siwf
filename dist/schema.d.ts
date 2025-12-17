@@ -86,5 +86,34 @@ export declare const schema: {
             };
         };
     };
+    walletAddress: {
+        modelName: string;
+        fields: {
+            userId: {
+                type: "string";
+                references: {
+                    model: string;
+                    field: string;
+                };
+                required: true;
+            };
+            address: {
+                type: "string";
+                required: true;
+            };
+            chainId: {
+                type: "number";
+                required: true;
+            };
+            isPrimary: {
+                type: "boolean";
+                defaultValue: false;
+            };
+            createdAt: {
+                type: "date";
+                required: true;
+            };
+        };
+    };
 };
 //# sourceMappingURL=schema.d.ts.map

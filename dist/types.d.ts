@@ -4,11 +4,34 @@ import type { schema } from "./schema.js";
 /**
  *  SIWF PLUGIN OPTIONS
  */
+export type ResolveFarcasterUserArgs = {
+    fid: number;
+};
+export type ResolveFarcasterUserResult = {
+    fid: number;
+    username: string;
+    displayName?: string;
+    avatarUrl?: string;
+    custodyAddress: string;
+    verifiedAddresses: {
+        primary: {
+            ethAddress?: string;
+            solAddress?: string;
+        };
+        ethAddresses: string[];
+        solAddresses: string[];
+    };
+};
 export type SIWFPluginOptions = {
     /**
      * The hostname of the server that will be used to verify the Farcaster JWT
      */
     hostname: string;
+    /**
+     * The function to use to resolve a Farcaster user via farcaster hubs
+     * @default null
+     */
+    resolveFarcasterUser: (args: ResolveFarcasterUserArgs) => Promise<ResolveFarcasterUserResult | null>;
     /**
      * Whether the user is allowed to link their Farcaster account to their Better Auth account
      * @default true
@@ -112,4 +135,12 @@ export type FarcasterUser = {
     createdAt: Date;
     updatedAt: Date;
 };
+export interface WalletAddress {
+    id: string;
+    userId: string;
+    address: string;
+    chainId: number;
+    isPrimary: boolean;
+    createdAt: Date;
+}
 //# sourceMappingURL=types.d.ts.map

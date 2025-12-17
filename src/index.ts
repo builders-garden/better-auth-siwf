@@ -8,6 +8,7 @@ import {
 import { setSessionCookie } from "better-auth/cookies";
 import { mergeSchema } from "better-auth/db";
 import type { Account, BetterAuthPlugin, User } from "better-auth/types";
+import { isAddressEqual } from "viem/utils";
 import { z } from "zod";
 import { schema } from "./schema.js";
 import type { FarcasterUser, SIWFPluginOptions } from "./types.js";
@@ -23,15 +24,6 @@ export type {
 
 /**
  * Farcaster SIWF authentication plugin for Better Auth.
- *
- * @example
- * ```ts
- * import { siwf } from "better-auth-siwf";
- *
- * const auth = betterAuth({
- *   plugins: [siwf({ hostname: "example.com" })],
- * });
- * ```
  */
 export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 	id: "siwf",
@@ -193,13 +185,27 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 
 					// Create new user if not exists
 					if (!user) {
+						const resolvedFarcasterUser = await options.resolveFarcasterUser({
+							fid,
+						});
+						if (!resolvedFarcasterUser) {
+							throw new APIError("UNAUTHORIZED", {
+								message: "SIWF Farcaster user not found.",
+							});
+						}
+						const primaryEthAddress =
+							resolvedFarcasterUser.verifiedAddresses.primary.ethAddress ??
+							resolvedFarcasterUser.custodyAddress;
+
 						user = await ctx.context.internalAdapter.createUser({
-							name: userFromClient.username ?? fid.toString(),
-							image: userFromClient.pfpUrl ?? undefined,
+							name: resolvedFarcasterUser.username ?? fid.toString(),
+							image: resolvedFarcasterUser.avatarUrl,
 							email: `${fid}@farcaster.emails`,
 							farcasterFid: fid,
-							farcasterUsername: userFromClient.username ?? fid.toString(),
-							farcasterDisplayName: userFromClient.displayName ?? undefined,
+							farcasterUsername:
+								resolvedFarcasterUser.username ?? fid.toString(),
+							farcasterDisplayName:
+								resolvedFarcasterUser.displayName ?? undefined,
 						});
 
 						// Create farcaster record if not exists
@@ -211,9 +217,9 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 									data: {
 										userId: user.id,
 										fid,
-										username: userFromClient.username ?? fid.toString(),
-										displayName: userFromClient.displayName,
-										avatarUrl: userFromClient.pfpUrl,
+										username: resolvedFarcasterUser.username ?? fid.toString(),
+										displayName: resolvedFarcasterUser.displayName,
+										avatarUrl: resolvedFarcasterUser.avatarUrl,
 										notificationDetails:
 											userFromClient.notificationDetails ?? [],
 										createdAt: new Date(),
@@ -226,8 +232,10 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 									providerId: "farcaster",
 									accountId: `farcaster:${fid}`,
 									farcasterFid: fid,
-									farcasterUsername: userFromClient.username ?? fid.toString(),
-									farcasterDisplayName: userFromClient.displayName ?? undefined,
+									farcasterUsername:
+										resolvedFarcasterUser.username ?? fid.toString(),
+									farcasterDisplayName:
+										resolvedFarcasterUser.displayName ?? undefined,
 									createdAt: new Date(),
 									updatedAt: new Date(),
 								}),
@@ -238,13 +246,45 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 									update: {
 										farcasterFid: fid,
 										farcasterUsername:
-											userFromClient.username ?? fid.toString(),
+											resolvedFarcasterUser.username ?? fid.toString(),
 										farcasterDisplayName:
-											userFromClient.displayName ?? undefined,
+											resolvedFarcasterUser.displayName ?? undefined,
 										updatedAt: new Date(),
 									},
 								}),
+								// save custody wallet in db
+								ctx.context.adapter.create({
+									model: "walletAddress",
+									data: [
+										{
+											userId: user.id,
+											address: resolvedFarcasterUser.custodyAddress,
+											chainId: 10, // optimism
+											isPrimary: isAddressEqual(
+												resolvedFarcasterUser.custodyAddress as `0x${string}`,
+												primaryEthAddress as `0x${string}`,
+											),
+										},
+									],
+								}),
 							]);
+
+							// save all verified eth addresses in db
+							for (const ethAddress of resolvedFarcasterUser.verifiedAddresses
+								.ethAddresses) {
+								await ctx.context.adapter.create({
+									model: "walletAddress",
+									data: {
+										userId: user.id,
+										address: ethAddress,
+										chainId: 1, // ethereum
+										isPrimary: isAddressEqual(
+											ethAddress as `0x${string}`,
+											primaryEthAddress as `0x${string}`,
+										),
+									},
+								});
+							}
 						}
 					}
 
@@ -467,15 +507,24 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 						});
 					}
 
+					const resolvedFarcasterUser = await options.resolveFarcasterUser({
+						fid,
+					});
+					if (!resolvedFarcasterUser) {
+						throw new APIError("UNAUTHORIZED", {
+							message: "SIWF Farcaster user not found.",
+						});
+					}
+
 					if (!existingFarcaster) {
 						await ctx.context.adapter.create({
 							model: "farcaster",
 							data: {
 								userId: session.user.id,
 								fid,
-								username: userFromClient.username ?? fid.toString(),
-								displayName: userFromClient.displayName,
-								avatarUrl: userFromClient.pfpUrl,
+								username: resolvedFarcasterUser.username ?? fid.toString(),
+								displayName: resolvedFarcasterUser.displayName,
+								avatarUrl: resolvedFarcasterUser.avatarUrl,
 								notificationDetails: userFromClient.notificationDetails ?? [],
 								createdAt: new Date(),
 								updatedAt: new Date(),
@@ -491,8 +540,9 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 							providerId: "farcaster",
 							accountId: `farcaster:${fid}`,
 							farcasterFid: fid,
-							farcasterUsername: userFromClient.username ?? fid.toString(),
-							farcasterDisplayName: userFromClient.displayName,
+							farcasterUsername:
+								resolvedFarcasterUser.username ?? fid.toString(),
+							farcasterDisplayName: resolvedFarcasterUser.displayName,
 						},
 					});
 
@@ -502,8 +552,10 @@ export const siwf = (options: SIWFPluginOptions): BetterAuthPlugin => ({
 						where: [{ field: "id", value: session.user.id }],
 						update: {
 							farcasterFid: fid,
-							farcasterUsername: userFromClient.username ?? fid.toString(),
-							farcasterDisplayName: userFromClient.displayName ?? undefined,
+							farcasterUsername:
+								resolvedFarcasterUser.username ?? fid.toString(),
+							farcasterDisplayName:
+								resolvedFarcasterUser.displayName ?? undefined,
 						},
 					});
 

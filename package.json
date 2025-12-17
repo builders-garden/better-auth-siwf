@@ -1,6 +1,6 @@
 {
 	"name": "better-auth-siwf",
-	"version": "1.0.22",
+	"version": "1.0.23",
 	"description": "better-auth plugin for Sign In With Farcaster",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -34,7 +34,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/builders-garden/better-auth-siwf.git"
+		"url": "git+https://github.com/builders-garden/better-auth-siwf.git"
 	},
 	"bugs": {
 		"url": "https://github.com/builders-garden/better-auth-siwf/issues"
@@ -46,6 +46,7 @@
 	"dependencies": {
 		"@farcaster/quick-auth": "^0.0.8",
 		"better-auth": "^1.4.5",
+		"viem": "^2.43.1",
 		"zod": "^4.1.12"
 	},
 	"devDependencies": {

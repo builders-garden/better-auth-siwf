@@ -21,24 +21,60 @@ Add the SIWF plugin to your Better Auth configuration.
 ```ts
 // auth.ts
 import { betterAuth } from "better-auth";
-import { generateRandomString } from "better-auth/crypto";
-import { siwf } from "better-auth-siwf";
+import { type ResolveFarcasterUserResult, siwf } from "better-auth-siwf";
 
-export const auth = betterAuth({
-  // database: { ... } // your DB config
-  plugins: [
-    siwf({
-      // must match the domain used when verifying the Farcaster JWT
-      domain: "app.example.com",
-      // (optional) whether the user is allowed to link their Farcaster account to their Better Auth account
-      allowUserToLink: true,
-    })
-  ]
+const auth = betterAuth({
+	// ... your better-auth config
+	plugins: [
+		siwf({
+			hostname: "app.example.com",
+			allowUserToLink: false,
+			// Optional: resolve the user data from neynar for example
+			// see neynar docs: https://docs.neynar.com/reference/fetch-bulk-users
+			resolveFarcasterUser: async ({
+				fid,
+			}): Promise<ResolveFarcasterUserResult | null> => {
+				const data = await fetch(
+					`https://api.neynar.com/v2/farcaster/user/bulk/?fids=${fid}`,
+					{
+						method: "GET",
+						headers: {
+							"x-api-key": process.env.NEYNAR_API_KEY,
+							"Content-Type": "application/json",
+						},
+					},
+				).then(async (data) => await data.json());
+
+				if (!data || data.users.length === 0) {
+					return null;
+				}
+
+				const user = data.users[0];
+				return {
+					fid,
+					username: user.username,
+					displayName: user.display_name,
+					avatarUrl: user.pfp_url,
+					custodyAddress: user.custody_address,
+					verifiedAddresses: {
+						primary: {
+							ethAddress:
+								user.verified_addresses.primary.eth_address ?? undefined,
+							solAddress:
+								user.verified_addresses.primary.sol_address ?? undefined,
+						},
+						ethAddresses: user.verified_addresses?.eth_addresses ?? undefined,
+						solAddresses: user.verified_addresses?.sol_addresses ?? undefined,
+					},
+				} satisfies ResolveFarcasterUserResult;
+			},
+		}),
+	],
 });
 ```
 
 ### What the plugin does
-- Exposes `POST /siwf/verify` to verify a Farcaster Quick Auth JWT and establish a Better Auth session cookie.
+- Exposes `POST /siwf/signin` to signin a Farcaster Quick Auth JWT and establish a Better Auth session cookie.
 - Creates a `user` if one does not exist, associates it with a `farcaster` record.
 - Sets a secure session cookie with `SameSite: "none"` for Farcaster MiniApp compatibility.
 
@@ -77,11 +113,18 @@ Send the token and user details to the Better Auth server. On success, the Bette
 
 ```ts
 const ctx = await miniappSdk.context;
-const { data } = await authClient.siwf.verifyToken({
+const { data } = await authClient.signInWithFarcaster({
   token: result.token,
   user: {
     ...ctx.user
-    notificationDetails: ctx.client.notificationDetails ?? undefined,
+    notificationDetails: ctx.client.notificationDetails
+      ? [
+          {
+            ...ctx.client.notificationDetails,
+            appFid: (await miniappSdk.context).client.clientFid
+          }
+        ]
+      : [],
   }
 });
 
@@ -113,7 +156,14 @@ const farcasterSignIn = async () => {
     token: result.token,
     user: {
       ...ctx.user
-      notificationDetails: ctx.client.notificationDetails ?? undefined,
+      notificationDetails: ctx.client.notificationDetails
+        ? [
+            {
+              ...ctx.client.notificationDetails,
+              appFid: (await miniappSdk.context).client.clientFid
+            }
+          ]
+        : [],
     }
   });
   if (!data.success) {
@@ -121,7 +171,6 @@ const farcasterSignIn = async () => {
   }
   console.log("Signed in", data.user);
 };
-
 ```
 
 ## Configuration Options
@@ -130,6 +179,7 @@ Server options accepted by `siwf`:
 
 - `domain` (string, required): Domain expected in the Farcaster JWT. Must match exactly.
 - `schema` (optional): Extend or override the default plugin schema via Better Auth `mergeSchema`.
+- `resolveFarcasterUser` (function): Resolve a Farcaster user via farcaster hubs.
 
 Client plugin `siwfClient` has no options; it exposes the plugin namespace in the Better Auth client.
 
@@ -150,6 +200,16 @@ This plugin merges the following tables into your Better Auth schema.
 | createdAt            | date    | Required                            |
 | updatedAt            | date    | Required                            |
 
+
+### `walletAddress`
+
+| Field                | Type    | Notes                              |
+|----------------------|---------|------------------------------------|
+| userId               | string  | References `user.id` (required)    |
+| address              | string  | The wallet address (required)      |
+| chainId              | number  | The chain ID (required)            |
+| isPrimary            | boolean | Whether the address is primary (required) |
+| createdAt            | date    | Required                            |
 
 ### Migrations
 
